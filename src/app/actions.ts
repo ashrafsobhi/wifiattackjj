@@ -15,7 +15,7 @@ export async function runHandshakeConversionAction(
   try {
     // In a real scenario, you'd pass the actual handshake data.
     // For this simulation, the AI has been prompted to respond to the context.
-    const result = await convertHandshake({ handshakeData });
+    const result = await convertHandshake({ handshakeData: "nemo-01.cap" });
     return result;
   } catch (error) {
     console.error("Error in handshake conversion:", error);
