@@ -70,8 +70,6 @@ export function StepCard({
     }
   };
 
-  const isCrackingStep = stepNumber === 7;
-
   return (
     <div className="relative">
       <div
@@ -127,11 +125,9 @@ export function StepCard({
                     disabled={isButtonLoading}
                   />
                 </div>
-                {isCrackingStep && (
-                  <Button type="submit" disabled={isButtonLoading} className="mt-2 w-full">
-                    {isButtonLoading ? "جاري الاختراق..." : "ابدأ الاختراق"}
+                 <Button type="submit" disabled={isButtonLoading} className="mt-2 w-full sm:hidden">
+                    {isButtonLoading ? "جاري التنفيذ..." : "نفذ الأمر"}
                   </Button>
-                )}
               </form>
             )}
           </CardContent>

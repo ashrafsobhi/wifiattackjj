@@ -323,23 +323,19 @@ export default function Home() {
         sendCertificateDetailsAction(studentData.name, studentData.phone, newCertNumber);
       } else {
         setConnectionStatus("failed");
+        toast({
+          variant: "destructive",
+          title: "فشل الاتصال",
+          description: "كلمة المرور اللي دخلتها غلط. حاول تاني.",
+        });
       }
       setIsLoading(false);
     }, 1500);
   };
   
-  const handleConnectionCommandSubmit = (command: string) => {
-    const expectedCommand = `nmcli device wifi connect nemo password ${connectionPassword}`;
-    if (command.trim() === expectedCommand.trim()) {
-      handleConnect();
-      setCurrentCommand("");
-    } else {
-      toast({
-        variant: "destructive",
-        title: "أمر خاطئ",
-        description: "الأمر اللي كتبته مش مطابق للأمر المطلوب بالباسورد الحالي. حاول تاني.",
-      });
-    }
+  const handleConnectionAttempt = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleConnect();
   };
 
 
@@ -585,51 +581,66 @@ ${handshakeConversionResult.hashcatFormat}`}
             <StepCard
               stepNumber={7}
               title="محاولة الاتصال بالشبكة"
-              command={`nmcli device wifi connect nemo password ${connectionPassword}`}
               status={getStatus(7)}
               Icon={KeyRound}
-              onCommandSubmit={handleConnectionCommandSubmit}
               isButtonLoading={isLoading && step === 7}
             >
               <p className="mb-4 text-sm text-muted-foreground">
-                الخطوة الأخيرة! دلوقتي هنستخدم الباسورد اللي عرفناه عشان نحاول نتصل بشبكة "nemo". اكتب الباسورد الصحيح في الخانة تحت عشان تكمل الأمر وتتصل.
+                الخطوة الأخيرة! دلوقتي هنستخدم الباسورد اللي عرفناه (
+                <span className="font-code text-accent">{correctPassword}</span>
+                ) عشان نحاول نتصل بشبكة "nemo".
               </p>
-              <div className="my-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <p className="font-code text-sm text-muted-foreground shrink-0 mb-2 sm:mb-0">الباسورد:</p>
-                <Input
-                  value={connectionPassword}
-                  onChange={(e) => setConnectionPassword(e.target.value)}
-                  placeholder="اكتب الباسورد هنا"
-                  className="font-code flex-1"
-                  disabled={isLoading}
-                />
-              </div>
+              
+              <form onSubmit={handleConnectionAttempt}>
+                <Card className="bg-background/50">
+                  <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Wifi className="h-5 w-5 text-primary" />
+                        الاتصال بشبكة
+                      </CardTitle>
+                      <CardDescription>
+                        أدخل كلمة المرور للاتصال بشبكة <span className="font-bold text-foreground">nemo</span>.
+                      </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="password">كلمة المرور</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={connectionPassword}
+                          onChange={(e) => setConnectionPassword(e.target.value)}
+                          placeholder="اكتب الباسورد هنا"
+                          className="font-code"
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                            جاري الاتصال...
+                          </>
+                        ) : (
+                          "اتصال"
+                        )}
+                      </Button>
+                  </CardContent>
+                </Card>
+              </form>
 
               {connectionStatus !== "pending" && (
                 <div className="mt-4">
-                  <h4 className="font-headline text-lg">نتيجة الاتصال:</h4>
-                  <TerminalOutput>
-                    {connectionStatus === "success" ? (
-                      <span className="text-green-400">
-                        Device 'wlan0' successfully activated with '...'
-                      </span>
-                    ) : (
-                      <span className="text-red-400">
-                        Error: Connection activation failed: (7) Secrets were required, but not provided.
-                      </span>
-                    )}
-                  </TerminalOutput>
-                  {connectionStatus === "success" && (
-                     <div className="mt-4 flex items-center gap-4 rounded-lg border border-green-500/50 bg-green-500/10 p-4">
+                  {connectionStatus === "success" ? (
+                     <div className="flex items-center gap-4 rounded-lg border border-green-500/50 bg-green-500/10 p-4">
                         <Signal className="h-8 w-8 text-green-400" />
                         <div>
                            <p className="text-sm text-green-300">تم الاتصال بنجاح!</p>
                            <p className="font-bold text-white">أنت الآن متصل بشبكة "nemo".</p>
                         </div>
                      </div>
-                  )}
-                   {connectionStatus === "failed" && (
-                     <div className="mt-4 flex items-center gap-4 rounded-lg border border-red-500/50 bg-red-500/10 p-4">
+                  ) : (
+                     <div className="flex items-center gap-4 rounded-lg border border-red-500/50 bg-red-500/10 p-4">
                         <XCircle className="h-8 w-8 text-red-400" />
                         <div>
                            <p className="text-sm text-red-300">فشل الاتصال</p>
@@ -646,7 +657,3 @@ ${handshakeConversionResult.hashcatFormat}`}
     </div>
   );
 }
-
-    
-
-    
