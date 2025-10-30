@@ -100,6 +100,7 @@ export default function Home() {
   const [crackingMask, setCrackingMask] = useState("?d?d?d?d?d?d?d?d");
   const [crackingResult, setCrackingResult] =
     useState<PasswordCrackingEmulationOutput | null>(null);
+  const [currentCommand, setCurrentCommand] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -108,6 +109,19 @@ export default function Home() {
     if (step < currentStep) return "pending";
     if (step === currentStep) return "active";
     return "completed";
+  };
+  
+  const handleCommandSubmit = (command: string, expectedCommand: string, nextStep: number) => {
+    if (command.trim() === expectedCommand.trim()) {
+      setStep(nextStep);
+      setCurrentCommand("");
+    } else {
+      toast({
+        variant: "destructive",
+        title: "أمر خاطئ",
+        description: "الأمر اللي كتبته مش صح، حاول تاني.",
+      });
+    }
   };
 
   const handleRunConversion = async () => {
@@ -119,8 +133,8 @@ export default function Home() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Conversion Failed",
-        description: "The AI-powered handshake conversion failed. Please try again.",
+        title: "فشل التحويل",
+        description: "فشلت عملية تحويل الهاندشيك باستخدام الذكاء الاصطناعي. حاول مرة أخرى.",
       });
     } finally {
       setIsLoading(false);
@@ -139,8 +153,8 @@ export default function Home() {
     } catch (error) {
        toast({
         variant: "destructive",
-        title: "Cracking Failed",
-        description: "The AI-powered password cracking emulation failed. Please try again.",
+        title: "فشل الاختراق",
+        description: "فشلت محاكاة اختراق كلمة المرور. حاول مرة أخرى.",
       });
     } finally {
       setIsLoading(false);
@@ -154,13 +168,15 @@ export default function Home() {
         <div className="mx-auto max-w-4xl space-y-8">
           <StepCard
             stepNumber={1}
-            title="Check Wifi Interface & Status"
+            title="التحقق من كارت الواي فاي وحالته"
             command="iwconfig"
             status={getStatus(1)}
             Icon={Wifi}
-            buttonText="Check Interface"
-            onButtonClick={() => setStep(2)}
+            onCommandSubmit={(cmd) => handleCommandSubmit(cmd, "iwconfig", 2)}
           >
+            <p className="mb-4 text-sm text-muted-foreground">
+              ده أول أمر بنستخدمه عشان نتأكد إن كارت الواي فاي بتاعنا موجود والنظام شايفه. الأمر ده بيعرض لنا كل كروت الشبكة اللي على الجهاز، وإحنا بندور على الكارت اللي بيدعم الواي فاي (عادة بيكون اسمه wlan0).
+            </p>
             <TerminalOutput>
               {`lo        no wireless extensions.
 
@@ -174,13 +190,15 @@ wlan0     IEEE 802.11  ESSID:off/any
 
           <StepCard
             stepNumber={2}
-            title="Enable Monitor Mode"
+            title="تفعيل وضع المراقبة (Monitor Mode)"
             command="sudo airmon-ng start wlan0"
             status={getStatus(2)}
             Icon={Monitor}
-            buttonText="Enable Monitor Mode"
-            onButtonClick={() => setStep(3)}
+            onCommandSubmit={(cmd) => handleCommandSubmit(cmd, "sudo airmon-ng start wlan0", 3)}
           >
+            <p className="mb-4 text-sm text-muted-foreground">
+              هنا بنحول كارت الواي فاي من الوضع العادي لوضع المراقبة. الوضع ده بيخلي الكارت يقدر "يسمع" كل باكيتات الواي فاي اللي في الهوا حواليه، مش بس اللي جاية لجهازك. ده أساسي عشان نقدر نلقط الـ Handshake بعد كده.
+            </p>
             <TerminalOutput>
               {`Found 3 processes that could cause trouble.
 Kill them using 'airmon-ng check kill'.
@@ -194,13 +212,15 @@ phy0 wlan0      rtl8812au Realtek Semiconductor Corp. RTL8812AU
 
           <StepCard
             stepNumber={3}
-            title="Verify Monitor Mode"
+            title="التأكد من تفعيل وضع المراقبة"
             command="iwconfig"
             status={getStatus(3)}
             Icon={Scan}
-            buttonText="Verify Mode & Scan Networks"
-            onButtonClick={() => setStep(4)}
+            onCommandSubmit={(cmd) => handleCommandSubmit(cmd, "iwconfig", 4)}
           >
+             <p className="mb-4 text-sm text-muted-foreground">
+              بنستخدم نفس الأمر الأولاني تاني عشان نتأكد إن وضع المراقبة اشتغل. المفروض هنلاقي كارت جديد ظهر (عادة اسمه wlan0mon) والـ Mode بتاعه بقى Monitor.
+            </p>
             <TerminalOutput>
               {`...
 
@@ -211,14 +231,33 @@ wlan0mon  IEEE 802.11  Mode:Monitor  Frequency:2.457 GHz
 
           <StepCard
             stepNumber={4}
-            title="Scan for Wi-Fi Networks"
+            title=" البحث عن شبكات الواي فاي"
             command="sudo airodump-ng wlan0mon"
             status={getStatus(4)}
             Icon={Scan}
+            onCommandSubmit={(cmd) => {
+              if (cmd.trim() !== 'sudo airodump-ng wlan0mon') {
+                 toast({
+                  variant: "destructive",
+                  title: "أمر خاطئ",
+                  description: "الأمر اللي كتبته مش صح، حاول تاني.",
+                });
+                return;
+              }
+              if (targetNetwork) {
+                setStep(5);
+                setCurrentCommand("");
+              } else {
+                toast({
+                  variant: "destructive",
+                  title: "اختار شبكة",
+                  description: "لازم تختار شبكة 'nemo' الأول.",
+                });
+              }
+            }}
           >
             <p className="mb-4 text-sm text-muted-foreground">
-              Scanning for nearby access points. Select the target network
-              (&quot;nemo&quot;) to proceed.
+              الأمر ده بيبدأ يعمل مسح لكل شبكات الواي فاي اللي حوالينا ويعرض تفاصيلها زي اسمها (ESSID) وقوة الإشارة (PWR) ونوع التشفير (ENC). هدفنا نلاقي الشبكة اللي عايزين نستهدفها، وفي حالتنا دي هي شبكة "nemo". اختارها عشان نكمل.
             </p>
             <div className="rounded-md border">
               <Table>
@@ -258,8 +297,9 @@ wlan0mon  IEEE 802.11  Mode:Monitor  Frequency:2.457 GHz
                               : "outline"
                           }
                           onClick={() => setTargetNetwork(net)}
+                           disabled={net.essid !== "nemo"}
                         >
-                          Select
+                          {net.essid === 'nemo' ? 'اختار' : 'غير متاح'}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -267,28 +307,34 @@ wlan0mon  IEEE 802.11  Mode:Monitor  Frequency:2.457 GHz
                 </TableBody>
               </Table>
             </div>
-            {targetNetwork && (
-              <Button
-                onClick={() => setStep(5)}
-                className="mt-4"
-                disabled={targetNetwork.essid !== "nemo"}
-              >
-                {targetNetwork.essid === 'nemo' ? `Target '${targetNetwork.essid}' and Capture Handshake` : 'Please select "nemo"'}
-              </Button>
-            )}
           </StepCard>
 
           <StepCard
             stepNumber={5}
-            title="Capture WPA Handshake"
+            title="التقاط الـ WPA Handshake"
             command={`sudo airodump-ng --bssid ${
               targetNetwork?.bssid ?? "FE:B5:D5:59:1E:5F"
             } -c ${targetNetwork?.ch ?? 1} --write nemo wlan0mon`}
             status={getStatus(5)}
             Icon={Hand}
-            buttonText="Capture Handshake"
-            onButtonClick={() => setIsHandshakeCaptured(true)}
+             onCommandSubmit={(cmd) => {
+              const expectedCommand = `sudo airodump-ng --bssid ${targetNetwork?.bssid} -c ${targetNetwork?.ch} --write nemo wlan0mon`;
+              if (cmd.trim() === expectedCommand.trim()) {
+                setIsHandshakeCaptured(true);
+                setStep(6);
+                setCurrentCommand("");
+              } else {
+                toast({
+                  variant: "destructive",
+                  title: "أمر خاطئ",
+                  description: "الأمر اللي كتبته مش صح، أو ممكن تكون لسه مختارتش الشبكة. حاول تاني.",
+                });
+              }
+            }}
           >
+             <p className="mb-4 text-sm text-muted-foreground">
+              دي أهم خطوة. بنركز المراقبة بتاعتنا على شبكة "nemo" بس وبنستنى أي جهاز يحاول يتصل بيها. لما ده بيحصل، بنلقط عملية "المصافحة" (Handshake) اللي بتحصل بينهم واللي بتحتوي على نسخة مشفرة من الباسورد. بعد ما تلقطها، هتلاقي رسالة تأكيد ظهرت.
+            </p>
             <TerminalOutput>
               {`CH 1 ][ Elapsed: 45 s ][ 2025-10-28 16:59 ][ WPA handshake: ${
                 targetNetwork?.bssid ?? "..."
@@ -306,26 +352,36 @@ CC:11:DD:22:EE:33  ${
                 targetNetwork?.bssid ?? "FE:B5:D5:59:1E:5F"
               } 10   (Not associated)`}
             </TerminalOutput>
-            <p className="mt-4 font-bold text-green-400">
-              ✅ WPA handshake captured!
-            </p>
-            {isHandshakeCaptured && (
-              <Button onClick={() => setStep(6)} className="mt-4">
-                Proceed to Conversion
-              </Button>
+            {getStatus(5) === 'completed' && (
+              <p className="mt-4 font-bold text-green-400">
+                ✅ تم التقاط الـ WPA handshake بنجاح!
+              </p>
             )}
           </StepCard>
 
           <StepCard
             stepNumber={6}
-            title="Convert Handshake for Hashcat"
-            command="hcxpcapngtool -o nemo nemo-01.cap"
+            title="تحويل صيغة الـ Handshake عشان Hashcat يفهمها"
+            command="hcxpcapngtool -o nemo.hc22000 nemo-01.cap"
             status={getStatus(6)}
             Icon={Binary}
-            buttonText="Convert with AI"
-            onButtonClick={handleRunConversion}
+            onCommandSubmit={(cmd) => {
+              if (cmd.trim() === 'hcxpcapngtool -o nemo.hc22000 nemo-01.cap') {
+                handleRunConversion();
+                setCurrentCommand("");
+              } else {
+                 toast({
+                  variant: "destructive",
+                  title: "أمر خاطئ",
+                  description: "الأمر اللي كتبته مش صح، حاول تاني.",
+                });
+              }
+            }}
             isButtonLoading={isLoading && step === 6}
           >
+             <p className="mb-4 text-sm text-muted-foreground">
+              الملف اللي لقطناه (cap.) مش جاهز لبرنامج كسر الباسوردات Hashcat. لازم الأول نحوله لصيغة مخصوصة (HC22000) باستخدام أداة مساعدة. هنا هنستخدم الذكاء الاصطناعي عشان يحاكي العملية دي ويجهز لنا الهاش.
+            </p>
             {handshakeConversionResult ? (
               <TerminalOutput>
                 {`${handshakeConversionResult.conversionDetails}
@@ -334,43 +390,66 @@ ${handshakeConversionResult.hashcatFormat}`}
               </TerminalOutput>
             ) : (
                <p className="text-sm text-muted-foreground">
-                The captured `.cap` file must be converted to a format Hashcat understands (HC22000). We&apos;ll use an AI to simulate `hcxpcapngtool` for this conversion.
+                في انتظار تنفيذ الأمر لتحويل الملف...
               </p>
             )}
           </StepCard>
 
           <StepCard
             stepNumber={7}
-            title="Crack Password with Hashcat"
-            command={`hashcat -m 22000 nemo -a 3 ${crackingMask}`}
+            title="كسر كلمة المرور باستخدام Hashcat"
+            command={`hashcat -m 22000 ${targetHash} -a 3 ${crackingMask}`}
             status={getStatus(7)}
             Icon={KeyRound}
           >
-            <p className="text-sm text-muted-foreground">
-              Simulate a Hashcat mask attack on the captured handshake. The AI will determine if the password can be cracked with the provided mask.
+            <p className="mb-4 text-sm text-muted-foreground">
+              دي المرحلة الأخيرة. بنستخدم Hashcat عشان نبدأ هجوم "Mask Attack" على الهاش اللي جهزناه. بنحدد له شكل الباسورد المتوقع (مثلاً 8 أرقام زي ما هو مكتوب). الذكاء الاصطناعي هيحاكي العملية دي ويقولنا إذا كان الماسك ده ممكن يلاقي الباسورد ولا لأ.
             </p>
             <div className="my-4 flex items-center gap-2">
+              <p className="font-code text-sm text-muted-foreground">الماسك:</p>
               <Input
                 value={crackingMask}
                 onChange={(e) => setCrackingMask(e.target.value)}
-                placeholder="Enter Hashcat mask"
-                className="font-code"
-                disabled={isLoading && step === 7}
+                placeholder="ادخل ماسك Hashcat"
+                className="font-code flex-1"
+                disabled={isLoading}
               />
-              <Button
-                onClick={handleRunCracking}
-                disabled={isLoading && step === 7}
-              >
-                {isLoading && step === 7 ? "Cracking..." : "Crack Password"}
-              </Button>
             </div>
+             <form onSubmit={(e) => {
+                e.preventDefault();
+                const expectedCommand = `hashcat -m 22000 ${targetHash} -a 3 ${crackingMask}`;
+                if (currentCommand.trim() === expectedCommand.trim()) {
+                  handleRunCracking();
+                } else {
+                  toast({
+                    variant: "destructive",
+                    title: "أمر خاطئ",
+                    description: "الأمر اللي كتبته مش مطابق للأمر المطلوب بالماسك الحالي. حاول تاني.",
+                  });
+                }
+              }}
+              className="flex items-center gap-2"
+              >
+                 <Input
+                    name="command"
+                    value={currentCommand}
+                    onChange={(e) => setCurrentCommand(e.target.value)}
+                    placeholder="اكتب الأمر هنا..."
+                    className="font-code flex-1"
+                    autoComplete="off"
+                    disabled={isLoading}
+                  />
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "جاري الاختراق..." : "ابدأ الاختراق"}
+                </Button>
+              </form>
             {crackingResult && (
               <div className="mt-4">
-                <h4 className="font-headline text-lg">Cracking Result:</h4>
+                <h4 className="font-headline text-lg">نتيجة الاختراق:</h4>
                 <TerminalOutput>
                   {crackingResult.status === "Cracked" ? (
                     <>
-                      <span className="text-green-400">Status: Cracked</span>
+                      <span className="text-green-400">الحالة: تم الاختراق بنجاح</span>
                       {`
 
 INFO: All hashes found!
@@ -379,7 +458,7 @@ ${targetHash}`}
                     </>
                   ) : (
                     <>
-                      <span className="text-yellow-400">Status: Not Cracked</span>
+                      <span className="text-yellow-400">الحالة: لم يتم الاختراق</span>
                       {`
 
 INFO: Exhausted dictionary. No password found with this mask.`}
@@ -390,7 +469,7 @@ INFO: Exhausted dictionary. No password found with this mask.`}
                    <div className="mt-4 flex items-center gap-4 rounded-lg border border-green-500/50 bg-green-500/10 p-4">
                       <Lock className="h-8 w-8 text-green-400" />
                       <div>
-                         <p className="text-sm text-green-300">Password Found!</p>
+                         <p className="text-sm text-green-300">تم العثور على كلمة المرور!</p>
                          <p className="font-code text-2xl font-bold text-white">{crackingResult.crackedPassword}</p>
                       </div>
                    </div>
@@ -398,8 +477,8 @@ INFO: Exhausted dictionary. No password found with this mask.`}
                  {crackingResult.status !== "Cracked" && (
                    <div className="mt-4 flex items-center gap-4 rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-4">
                       <div>
-                         <p className="text-sm text-yellow-300">Password Not Found</p>
-                         <p className="text-white">Try a different mask or a dictionary attack. Cracking can take a long time.</p>
+                         <p className="text-sm text-yellow-300">لم يتم العثور على كلمة المرور</p>
+                         <p className="text-white">جرب ماسك مختلف أو استخدم هجوم القاموس. عملية الاختراق ممكن تاخد وقت طويل.</p>
                       </div>
                    </div>
                 )}

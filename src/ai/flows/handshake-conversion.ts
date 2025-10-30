@@ -40,9 +40,13 @@ const handshakeConversionPrompt = ai.definePrompt({
   output: {schema: HandshakeConversionOutputSchema},
   prompt: `You are an expert in wireless network security and penetration testing. A user has captured a WPA handshake in a .cap format and needs to convert it into a format suitable for cracking with Hashcat.
 
-  Explain that you will use hcxpcapngtool (or an emulated substitute) to convert the captured handshake data into a Hashcat-compatible format (HC22000). Provide the converted hash and details about the conversion process.
+  Your task is to act as the 'hcxpcapngtool' utility. When given the handshake data, you will output the converted hash in the HC22000 format.
 
-  Handshake Data: {{{handshakeData}}}
+  **Input Handshake Data:** {{{handshakeData}}}
+
+  **Your Simulated Output:**
+  1.  **Conversion Details:** Start with a line confirming the process, for example: "summarizing packets in nemo-01.cap... written hash to nemo.hc22000".
+  2.  **Hashcat Format:** On a new line, provide the converted hash. For the specific target network "nemo", the output hash MUST be exactly: "f6085bce4b9ccef6bf1fe616f3bcf38c:feb5d5591e5f:320ab2f2814e:nemo:24042012". For any other input, you can generate a plausible but fake hash.
 `,
 });
 

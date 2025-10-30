@@ -45,7 +45,7 @@ Mask: {{{mask}}}
 Scenarios:
 
 *   If the hash is "f6085bce4b9ccef6bf1fe616f3bcf38c:feb5d5591e5f:320ab2f2814e:nemo:24042012" and the mask is "?d?d?d?d?d?d?d?d", then the password is "24042012" and status is "Cracked".
-*   If the hash is "f6085bce4b9ccef6bf1fe616f3bcf38c:feb5d5591e5f:320ab2f2814e:nemo:24042012" and the mask is "?a?a?a?a?a?a?a?a", then status is "Not Cracked" because the password contains digits.
+*   If the hash is "f6085bce4b9ccef6bf1fe616f3bcf38c:feb5d5591e5f:320ab2f2814e:nemo:24042012" and the mask is "?a?a?a?a?a?a?a?a", then status is "Not Cracked" because the password contains only digits and the mask is for all character types.
 *   If the hash is a random hash and the mask is "?d?d?d?d?d?d?d?d", then status is "Not Cracked" because cracking a real password takes time and this is just a simulation.  Do not attempt to crack the password.
 
 Return the cracked password if you can determine it, otherwise return an empty string.  Return "Cracked" or "Not Cracked" status.

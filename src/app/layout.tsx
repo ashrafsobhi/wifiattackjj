@@ -3,9 +3,9 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: "Web Wireless Auditor",
+  title: "محاكي اختراق الشبكات",
   description:
-    "An interactive web-based simulation of a WiFi penetration testing workflow.",
+    "محاكاة تفاعلية لخطوات اختبار اختراق شبكات الواي فاي.",
 };
 
 export default function RootLayout({
@@ -14,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="ar" dir="rtl" className="dark">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -23,7 +23,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;700&display=swap"
           rel="stylesheet"
         />
         <link

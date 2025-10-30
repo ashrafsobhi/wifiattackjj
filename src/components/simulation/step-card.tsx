@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -7,7 +8,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CheckCircle, Circle, Loader2, type LucideIcon } from "lucide-react";
+import { CheckCircle, Circle, Loader2, type LucideIcon, Terminal } from "lucide-react";
+import { Input } from "../ui/input";
 
 export type Status = "pending" | "active" | "completed";
 
@@ -18,9 +20,7 @@ interface StepProps {
   status: Status;
   Icon: LucideIcon;
   children: React.ReactNode;
-  buttonText?: string;
-  onButtonClick?: () => void;
-  isButtonDisabled?: boolean;
+  onCommandSubmit?: (command: string) => void;
   isButtonLoading?: boolean;
 }
 
@@ -33,7 +33,7 @@ const statusConfig = {
     contentVisibility: "hidden",
   },
   active: {
-    Icon: Loader2,
+    Icon: Terminal,
     borderColor: "border-primary/50",
     textColor: "text-primary",
     bgColor: "bg-card",
@@ -55,13 +55,20 @@ export function StepCard({
   status,
   Icon,
   children,
-  buttonText,
-  onButtonClick,
-  isButtonDisabled = false,
+  onCommandSubmit,
   isButtonLoading = false,
 }: StepProps) {
+  const [inputValue, setInputValue] = useState("");
   const config = statusConfig[status];
-  const StatusIcon = status === "active" ? Loader2 : config.Icon;
+  const StatusIcon = status === 'active' ? config.Icon : config.Icon;
+
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onCommandSubmit) {
+      onCommandSubmit(inputValue);
+    }
+  };
 
   return (
     <div className="relative">
@@ -81,7 +88,7 @@ export function StepCard({
         )}
       >
         <CardHeader className="flex flex-row items-center gap-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary shrink-0">
             <Icon
               className={cn("h-6 w-6", config.textColor)}
               aria-hidden="true"
@@ -89,11 +96,11 @@ export function StepCard({
           </div>
           <div className="flex-1">
             <CardTitle className="font-headline text-xl">
-              <span className="text-muted-foreground/50 mr-2">{stepNumber}.</span>
+              <span className="text-muted-foreground/50 ml-2">{stepNumber}.</span>
               {title}
             </CardTitle>
             {command && (
-              <CardDescription className="font-code mt-1 text-xs">
+              <CardDescription className="font-code mt-1 text-xs text-left" dir="ltr">
                 {command}
               </CardDescription>
             )}
@@ -105,20 +112,20 @@ export function StepCard({
         {status !== "pending" && (
           <CardContent>
             <div className="space-y-4">{children}</div>
-            {buttonText && status === "active" && (
-              <div className="mt-6 border-t pt-4">
-                <Button
-                  onClick={onButtonClick}
-                  disabled={isButtonDisabled || isButtonLoading}
-                  size="lg"
-                  className="w-full md:w-auto"
-                >
-                  {isButtonLoading && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  {buttonText}
-                </Button>
-              </div>
+            {onCommandSubmit && status === "active" && (
+              <form onSubmit={handleSubmit} className="mt-6 border-t pt-4">
+                 <div className="relative">
+                  <Terminal className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    placeholder="اكتب الأمر هنا واضغط Enter"
+                    className="font-code pl-10"
+                    autoComplete="off"
+                    disabled={isButtonLoading}
+                  />
+                 </div>
+              </form>
             )}
           </CardContent>
         )}
