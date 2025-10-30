@@ -9,14 +9,14 @@ import {
   Hand,
   Binary,
   KeyRound,
-  Lock,
   User,
   Phone,
-  Loader2
+  Loader2,
+  Signal,
+  XCircle
 } from "lucide-react";
 
 import {
-  runPasswordCrackingAction,
   sendTelegramMessageAction
 } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import type { HandshakeConversionOutput } from "@/ai/flows/handshake-conversion";
-import type { PasswordCrackingEmulationOutput } from "@/ai/flows/password-cracking-emulation";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -96,6 +95,7 @@ const initialNetworks: Network[] = [
 ];
 
 const targetHash = "f6085bce4b9ccef6bf1fe616f3bcf38c:feb5d5591e5f:320ab2f2814e:nemo:24042012";
+const correctPassword = "24042012";
 
 function RegistrationForm({ onRegister }: { onRegister: () => void }) {
   const [name, setName] = useState("");
@@ -200,9 +200,9 @@ export default function Home() {
   const [isHandshakeCaptured, setIsHandshakeCaptured] = useState(false);
   const [handshakeConversionResult, setHandshakeConversionResult] =
     useState<HandshakeConversionOutput | null>(null);
-  const [crackingMask, setCrackingMask] = useState("?d?d?d?d?d?d?d?d");
-  const [crackingResult, setCrackingResult] =
-    useState<PasswordCrackingEmulationOutput | null>(null);
+  const [connectionPassword, setConnectionPassword] = useState("");
+  const [connectionStatus, setConnectionStatus] =
+    useState<"pending" | "success" | "failed">("pending");
   const [currentCommand, setCurrentCommand] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
@@ -240,41 +240,33 @@ export default function Home() {
     }, 1000); // Simulate a short delay
   };
   
-  const handleRunCracking = async () => {
-    if (!handshakeConversionResult) return;
+  const handleConnect = async () => {
     setIsLoading(true);
-    try {
-      const result = await runPasswordCrackingAction({
-        hash: targetHash,
-        mask: crackingMask,
-      });
-      setCrackingResult(result);
-    } catch (error) {
-       toast({
-        variant: "destructive",
-        title: "فشل الاختراق",
-        description: "فشلت محاكاة اختراق كلمة المرور. حاول مرة أخرى.",
-      });
-    } finally {
+    setConnectionStatus("pending");
+    setTimeout(() => {
+      if (connectionPassword === correctPassword) {
+        setConnectionStatus("success");
+      } else {
+        setConnectionStatus("failed");
+      }
       setIsLoading(false);
-    }
+    }, 1500);
   };
-
-  const handleCrackingCommandSubmit = (command: string) => {
-    const expectedCommand = `hashcat -m 22000 ${
-                handshakeConversionResult?.hashcatFormat ?? targetHash
-              } -a 3 ${crackingMask}`;
+  
+  const handleConnectionCommandSubmit = (command: string) => {
+    const expectedCommand = `nmcli device wifi connect nemo password ${connectionPassword}`;
     if (command.trim() === expectedCommand.trim()) {
-      handleRunCracking();
+      handleConnect();
       setCurrentCommand("");
     } else {
       toast({
         variant: "destructive",
         title: "أمر خاطئ",
-        description: "الأمر اللي كتبته مش مطابق للأمر المطلوب بالماسك الحالي. حاول تاني.",
+        description: "الأمر اللي كتبته مش مطابق للأمر المطلوب بالباسورد الحالي. حاول تاني.",
       });
     }
   };
+
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -479,7 +471,7 @@ CC:11:DD:22:EE:33  ${
 
             <StepCard
               stepNumber={6}
-              title="تحويل صيغة الـ Handshake عشان Hashcat يفهمها"
+              title="تحويل صيغة الـ Handshake"
               command="hcxpcapngtool -o nemo.hc22000 nemo-01.cap"
               status={getStatus(6)}
               Icon={Binary}
@@ -498,7 +490,7 @@ CC:11:DD:22:EE:33  ${
               isButtonLoading={isLoading && step === 6}
             >
                <p className="mb-4 text-sm text-muted-foreground">
-                الملف اللي لقطناه (cap.) مش جاهز لبرنامج كسر الباسوردات Hashcat. لازم الأول نحوله لصيغة مخصوصة (HC22000) باستخدام أداة مساعدة.
+                الملف اللي لقطناه (cap.) مش جاهز لبرنامج كسر الباسوردات. لازم الأول نحوله لصيغة مخصوصة (HC22000) باستخدام أداة مساعدة عشان نقدر نستخدمه في الخطوات الجاية.
               </p>
               {handshakeConversionResult ? (
                 <TerminalOutput>
@@ -515,65 +507,56 @@ ${handshakeConversionResult.hashcatFormat}`}
 
             <StepCard
               stepNumber={7}
-              title="كسر كلمة المرور باستخدام Hashcat"
-              command={`hashcat -m 22000 ${
-                handshakeConversionResult?.hashcatFormat ?? targetHash
-              } -a 3 ${crackingMask}`}
+              title="محاولة الاتصال بالشبكة"
+              command={`nmcli device wifi connect nemo password ${connectionPassword}`}
               status={getStatus(7)}
               Icon={KeyRound}
-              onCommandSubmit={handleCrackingCommandSubmit}
+              onCommandSubmit={handleConnectionCommandSubmit}
               isButtonLoading={isLoading && step === 7}
             >
               <p className="mb-4 text-sm text-muted-foreground">
-                دي المرحلة الأخيرة. بنستخدم Hashcat عشان نبدأ هجوم "Mask Attack" على الهاش اللي جهزناه. بنحدد له شكل الباسورد المتوقع (مثلاً 8 أرقام زي ما هو مكتوب). الذكاء الاصطناعي هيحاكي العملية دي ويقولنا إذا كان الماسك ده ممكن يلاقي الباسورد ولا لأ.
+                الخطوة الأخيرة! دلوقتي هنستخدم الباسورد اللي عرفناه عشان نحاول نتصل بشبكة "nemo". اكتب الباسورد الصحيح في الخانة تحت عشان تكمل الأمر وتتصل.
               </p>
               <div className="my-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <p className="font-code text-sm text-muted-foreground shrink-0 mb-2 sm:mb-0">الماسك:</p>
+                <p className="font-code text-sm text-muted-foreground shrink-0 mb-2 sm:mb-0">الباسورد:</p>
                 <Input
-                  value={crackingMask}
-                  onChange={(e) => setCrackingMask(e.target.value)}
-                  placeholder="ادخل ماسك Hashcat"
+                  value={connectionPassword}
+                  onChange={(e) => setConnectionPassword(e.target.value)}
+                  placeholder="اكتب الباسورد هنا"
                   className="font-code flex-1"
                   disabled={isLoading}
                 />
               </div>
 
-              {crackingResult && (
+              {connectionStatus !== "pending" && (
                 <div className="mt-4">
-                  <h4 className="font-headline text-lg">نتيجة الاختراق:</h4>
+                  <h4 className="font-headline text-lg">نتيجة الاتصال:</h4>
                   <TerminalOutput>
-                    {crackingResult.status === "Cracked" ? (
-                      <>
-                        <span className="text-green-400">الحالة: تم الاختراق بنجاح</span>
-                        {`
-
-INFO: All hashes found!
-
-${handshakeConversionResult?.hashcatFormat}`}
-                      </>
+                    {connectionStatus === "success" ? (
+                      <span className="text-green-400">
+                        Device 'wlan0' successfully activated with '...'
+                      </span>
                     ) : (
-                      <>
-                        <span className="text-yellow-400">الحالة: لم يتم الاختراق</span>
-                        {`
-
-INFO: Exhausted dictionary. No password found with this mask.`}
-                      </>
+                      <span className="text-red-400">
+                        Error: Connection activation failed: (7) Secrets were required, but not provided.
+                      </span>
                     )}
                   </TerminalOutput>
-                  {crackingResult.status === "Cracked" && (
+                  {connectionStatus === "success" && (
                      <div className="mt-4 flex items-center gap-4 rounded-lg border border-green-500/50 bg-green-500/10 p-4">
-                        <Lock className="h-8 w-8 text-green-400" />
+                        <Signal className="h-8 w-8 text-green-400" />
                         <div>
-                           <p className="text-sm text-green-300">تم العثور على كلمة المرور!</p>
-                           <p className="font-code text-xl md:text-2xl font-bold text-white">{crackingResult.crackedPassword}</p>
+                           <p className="text-sm text-green-300">تم الاتصال بنجاح!</p>
+                           <p className="font-bold text-white">أنت الآن متصل بشبكة "nemo".</p>
                         </div>
                      </div>
                   )}
-                   {crackingResult.status !== "Cracked" && (
-                     <div className="mt-4 flex items-center gap-4 rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-4">
+                   {connectionStatus === "failed" && (
+                     <div className="mt-4 flex items-center gap-4 rounded-lg border border-red-500/50 bg-red-500/10 p-4">
+                        <XCircle className="h-8 w-8 text-red-400" />
                         <div>
-                           <p className="text-sm text-yellow-300">لم يتم العثور على كلمة المرور</p>
-                           <p className="text-white">جرب ماسك مختلف أو استخدم هجوم القاموس. عملية الاختراق ممكن تاخد وقت طويل.</p>
+                           <p className="text-sm text-red-300">فشل الاتصال</p>
+                           <p className="text-white">كلمة المرور اللي دخلتها غلط. حاول تاني.</p>
                         </div>
                      </div>
                   )}
@@ -586,3 +569,5 @@ INFO: Exhausted dictionary. No password found with this mask.`}
     </div>
   );
 }
+
+    

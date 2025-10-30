@@ -2,20 +2,21 @@
 "use server";
 
 import {
-  passwordCrackingEmulation,
-  type PasswordCrackingEmulationInput,
-  type PasswordCrackingEmulationOutput,
-} from "@/ai/flows/password-cracking-emulation";
+  convertHandshake,
+  type HandshakeConversionInput,
+  type HandshakeConversionOutput,
+} from "@/ai/flows/handshake-conversion";
 
-export async function runPasswordCrackingAction(
-  input: PasswordCrackingEmulationInput
-): Promise<PasswordCrackingEmulationOutput> {
+
+export async function runHandshakeConversionAction(
+  input: HandshakeConversionInput
+): Promise<HandshakeConversionOutput> {
   try {
-    const result = await passwordCrackingEmulation(input);
+    const result = await convertHandshake(input);
     return result;
   } catch (error) {
-    console.error("Error in password cracking emulation:", error);
-    throw new Error("Failed to run password cracking emulation.");
+    console.error("Error in handshake conversion:", error);
+    throw new Error("Failed to run handshake conversion.");
   }
 }
 
