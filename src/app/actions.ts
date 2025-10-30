@@ -39,8 +39,17 @@ export async function sendTelegramMessageAction(
   name: string,
   phone: string
 ): Promise<{ success: boolean; message: string }> {
-  const botToken = "8230425730:AAF5-RZl2erzm2nP-HuGmRY7QshAtgjasS4";
-  const chatId = "-1002246755497"; // You need to get your chat ID
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+
+  if (!botToken || !chatId) {
+    console.error("Telegram Bot Token or Chat ID is not configured.");
+    return {
+      success: false,
+      message: "فشل الإرسال، إعدادات البوت غير مكتملة.",
+    };
+  }
+  
   const text = `
 متدرب جديد بدأ المحاكاة:
 الاسم: ${name}
