@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Wifi,
   Scan,
@@ -13,11 +13,14 @@ import {
   Phone,
   Loader2,
   Signal,
-  XCircle
+  XCircle,
+  Award,
+  Printer
 } from "lucide-react";
 
 import {
-  sendTelegramMessageAction
+  sendTelegramMessageAction,
+  sendCertificateDetailsAction,
 } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { AppHeader } from "@/components/layout/app-header";
@@ -97,7 +100,7 @@ const initialNetworks: Network[] = [
 const targetHash = "f6085bce4b9ccef6bf1fe616f3bcf38c:feb5d5591e5f:320ab2f2814e:nemo:24042012";
 const correctPassword = "24042012";
 
-function RegistrationForm({ onRegister }: { onRegister: () => void }) {
+function RegistrationForm({ onRegister }: { onRegister: (name: string, phone: string) => void }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -121,7 +124,7 @@ function RegistrationForm({ onRegister }: { onRegister: () => void }) {
           title: "تم التسجيل",
           description: "بياناتك اتبعتت بنجاح. هنبدأ المحاكاة دلوقتي.",
         });
-        onRegister();
+        onRegister(name, phone);
       } else {
         throw new Error(result.message);
       }
@@ -193,8 +196,70 @@ function RegistrationForm({ onRegister }: { onRegister: () => void }) {
   );
 }
 
+
+function Certificate({ studentName, certificateNumber }: { studentName: string; certificateNumber: string; }) {
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <>
+      <style jsx global>{`
+        @media print {
+          body > *:not(.printable-certificate) {
+            display: none;
+          }
+          .printable-certificate {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: hsl(var(--background));
+            z-index: 9999;
+          }
+          .no-print {
+            display: none;
+          }
+        }
+      `}</style>
+      <div className="printable-certificate flex justify-center items-center py-12">
+        <Card className="w-full max-w-2xl border-2 border-primary shadow-2xl shadow-primary/20">
+          <CardHeader className="text-center items-center space-y-4">
+            <Award className="h-16 w-16 text-primary" />
+            <p className="text-sm font-bold text-muted-foreground tracking-widest">CybHack</p>
+            <CardTitle className="text-4xl font-headline">شهادة تقدير</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-6 px-10 py-8">
+            <p className="text-lg text-foreground">مقدمة إلى</p>
+            <p className="text-3xl font-bold font-headline text-accent">{studentName}</p>
+            <p className="text-xl text-muted-foreground">
+              لاجتيازه محاكي اختراق الشبكات بنجاح
+            </p>
+            <p className="text-2xl font-bold">"اشطر كتكوت بيهكر شبكاااات😍💕🥳🥳"</p>
+            <div className="pt-4">
+              <p className="text-xs text-muted-foreground">رقم الشهادة</p>
+              <p className="font-code text-sm text-foreground">{certificateNumber}</p>
+            </div>
+          </CardContent>
+           <div className="p-6 pt-0 flex justify-center no-print">
+             <Button onClick={handlePrint}>
+               <Printer className="ml-2 h-4 w-4" />
+               طباعة الشهادة
+             </Button>
+          </div>
+        </Card>
+      </div>
+    </>
+  );
+}
+
+
 export default function Home() {
   const [isRegistered, setIsRegistered] = useState(false);
+  const [studentData, setStudentData] = useState({ name: "", phone: "" });
+
   const [step, setStep] = useState(1);
   const [targetNetwork, setTargetNetwork] = useState<Network | null>(null);
   const [isHandshakeCaptured, setIsHandshakeCaptured] = useState(false);
@@ -204,9 +269,16 @@ export default function Home() {
   const [connectionStatus, setConnectionStatus] =
     useState<"pending" | "success" | "failed">("pending");
   const [currentCommand, setCurrentCommand] = useState("");
+  const [certificateNumber, setCertificateNumber] = useState<string | null>(null);
+
 
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  
+  const handleRegister = (name: string, phone: string) => {
+    setStudentData({ name, phone });
+    setIsRegistered(true);
+  };
 
   const getStatus = (currentStep: number): Status => {
     if (step < currentStep) return "pending";
@@ -246,6 +318,9 @@ export default function Home() {
     setTimeout(() => {
       if (connectionPassword === correctPassword) {
         setConnectionStatus("success");
+        const newCertNumber = `CYBHACK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        setCertificateNumber(newCertNumber);
+        sendCertificateDetailsAction(studentData.name, studentData.phone, newCertNumber);
       } else {
         setConnectionStatus("failed");
       }
@@ -273,7 +348,9 @@ export default function Home() {
       <AppHeader />
       <main className="container mx-auto flex-1 px-4 py-6 md:px-6 md:py-12">
         {!isRegistered ? (
-          <RegistrationForm onRegister={() => setIsRegistered(true)} />
+          <RegistrationForm onRegister={handleRegister} />
+        ) : connectionStatus === 'success' && certificateNumber ? (
+           <Certificate studentName={studentData.name} certificateNumber={certificateNumber} />
         ) : (
           <div className="mx-auto max-w-4xl space-y-6 md:space-y-8">
             <StepCard
@@ -569,5 +646,7 @@ ${handshakeConversionResult.hashcatFormat}`}
     </div>
   );
 }
+
+    
 
     
