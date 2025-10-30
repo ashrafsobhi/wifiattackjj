@@ -89,26 +89,26 @@ export function StepCard({
           status === "pending" && "blur-[1px] saturate-0"
         )}
       >
-        <CardHeader className="flex flex-row items-center gap-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary shrink-0">
+        <CardHeader className="flex flex-row items-start md:items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary shrink-0 mt-1 md:mt-0">
             <Icon
               className={cn("h-6 w-6", config.textColor)}
               aria-hidden="true"
             />
           </div>
           <div className="flex-1">
-            <CardTitle className="font-headline text-xl">
+            <CardTitle className="font-headline text-lg md:text-xl">
               <span className="text-muted-foreground/50 ml-2">{stepNumber}.</span>
               {title}
             </CardTitle>
             {command && (
-              <CardDescription className="font-code mt-1 text-xs text-left" dir="ltr">
+              <CardDescription className="font-code mt-1 text-xs text-left break-all" dir="ltr">
                 {command}
               </CardDescription>
             )}
           </div>
           <StatusIcon
-            className={cn("h-6 w-6", config.textColor, status === 'active' && isButtonLoading && "animate-spin")}
+            className={cn("h-6 w-6 shrink-0", config.textColor, status === 'active' && isButtonLoading && "animate-spin")}
           />
         </CardHeader>
         {status !== "pending" && (

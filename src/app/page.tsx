@@ -162,7 +162,7 @@ export default function Home() {
   };
 
   const handleCrackingCommandSubmit = (command: string) => {
-    const expectedCommand = `hashcat -m 22000 ${targetHash} -a 3 ${crackingMask}`;
+    const expectedCommand = `hashcat -m 22000 ${handshakeConversionResult?.hashcatFormat} -a 3 ${crackingMask}`;
     if (command.trim() === expectedCommand.trim()) {
       handleRunCracking();
       setCurrentCommand("");
@@ -178,8 +178,8 @@ export default function Home() {
   return (
     <div className="flex min-h-screen w-full flex-col">
       <AppHeader />
-      <main className="container mx-auto flex-1 px-4 py-8 md:px-6 md:py-12">
-        <div className="mx-auto max-w-4xl space-y-8">
+      <main className="container mx-auto flex-1 px-4 py-6 md:px-6 md:py-12">
+        <div className="mx-auto max-w-4xl space-y-6 md:space-y-8">
           <StepCard
             stepNumber={1}
             title="التحقق من كارت الواي فاي وحالته"
@@ -277,12 +277,12 @@ wlan0mon  IEEE 802.11  Mode:Monitor  Frequency:2.457 GHz
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>BSSID</TableHead>
-                    <TableHead>PWR</TableHead>
-                    <TableHead>CH</TableHead>
-                    <TableHead>ENC</TableHead>
-                    <TableHead>ESSID</TableHead>
-                    <TableHead></TableHead>
+                    <TableHead className="p-2 md:p-4">BSSID</TableHead>
+                    <TableHead className="p-2 md:p-4">PWR</TableHead>
+                    <TableHead className="hidden sm:table-cell p-2 md:p-4">CH</TableHead>
+                    <TableHead className="hidden sm:table-cell p-2 md:p-4">ENC</TableHead>
+                    <TableHead className="p-2 md:p-4">ESSID</TableHead>
+                    <TableHead className="p-2 md:p-4"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -297,12 +297,12 @@ wlan0mon  IEEE 802.11  Mode:Monitor  Frequency:2.457 GHz
                       )}
                       onClick={() => setTargetNetwork(net)}
                     >
-                      <TableCell className="font-code">{net.bssid}</TableCell>
-                      <TableCell>{net.pwr}</TableCell>
-                      <TableCell>{net.ch}</TableCell>
-                      <TableCell>{net.enc}</TableCell>
-                      <TableCell>{net.essid}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-code p-2 md:p-4 text-xs md:text-sm">{net.bssid}</TableCell>
+                      <TableCell className="p-2 md:p-4">{net.pwr}</TableCell>
+                      <TableCell className="hidden sm:table-cell p-2 md:p-4">{net.ch}</TableCell>
+                      <TableCell className="hidden sm:table-cell p-2 md:p-4">{net.enc}</TableCell>
+                      <TableCell className="p-2 md:p-4">{net.essid}</TableCell>
+                      <TableCell className="p-2 md:p-4">
                         <Button
                           size="sm"
                           variant={
@@ -412,7 +412,9 @@ ${handshakeConversionResult.hashcatFormat}`}
           <StepCard
             stepNumber={7}
             title="كسر كلمة المرور باستخدام Hashcat"
-            command={`hashcat -m 22000 ${targetHash} -a 3 ${crackingMask}`}
+            command={`hashcat -m 22000 ${
+              handshakeConversionResult?.hashcatFormat ?? targetHash
+            } -a 3 ${crackingMask}`}
             status={getStatus(7)}
             Icon={KeyRound}
             onCommandSubmit={handleCrackingCommandSubmit}
@@ -421,8 +423,8 @@ ${handshakeConversionResult.hashcatFormat}`}
             <p className="mb-4 text-sm text-muted-foreground">
               دي المرحلة الأخيرة. بنستخدم Hashcat عشان نبدأ هجوم "Mask Attack" على الهاش اللي جهزناه. بنحدد له شكل الباسورد المتوقع (مثلاً 8 أرقام زي ما هو مكتوب). الذكاء الاصطناعي هيحاكي العملية دي ويقولنا إذا كان الماسك ده ممكن يلاقي الباسورد ولا لأ.
             </p>
-            <div className="my-4 flex items-center gap-2">
-              <p className="font-code text-sm text-muted-foreground">الماسك:</p>
+            <div className="my-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <p className="font-code text-sm text-muted-foreground shrink-0 mb-2 sm:mb-0">الماسك:</p>
               <Input
                 value={crackingMask}
                 onChange={(e) => setCrackingMask(e.target.value)}
@@ -443,7 +445,7 @@ ${handshakeConversionResult.hashcatFormat}`}
 
 INFO: All hashes found!
 
-${targetHash}`}
+${handshakeConversionResult?.hashcatFormat}`}
                     </>
                   ) : (
                     <>
@@ -459,7 +461,7 @@ INFO: Exhausted dictionary. No password found with this mask.`}
                       <Lock className="h-8 w-8 text-green-400" />
                       <div>
                          <p className="text-sm text-green-300">تم العثور على كلمة المرور!</p>
-                         <p className="font-code text-2xl font-bold text-white">{crackingResult.crackedPassword}</p>
+                         <p className="font-code text-xl md:text-2xl font-bold text-white">{crackingResult.crackedPassword}</p>
                       </div>
                    </div>
                 )}
