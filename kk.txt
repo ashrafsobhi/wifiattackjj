@@ -1,0 +1,14 @@
+# لتهيئة مستودع Git المحلي
+git init -b main
+
+# لإضافة كل الملفات للمتابعة
+git add .
+
+# لعمل أول commit (حفظ للتغييرات)
+git commit -m "Initial commit"
+
+# لربط مشروعك المحلي بالمستودع على GitHub (استبدل الرابط بالرابط الخاص بك)
+git remote add origin https://github.com/your-username/repository-name.git
+
+# لرفع الكود إلى GitHub
+git push -u origin main
