@@ -312,7 +312,7 @@ export default function Home() {
     }, 1000); // Simulate a short delay
   };
   
-  const handleConnect = async () => {
+  const handleConnect = () => {
     setIsLoading(true);
     setConnectionStatus("pending");
     setTimeout(() => {
@@ -583,7 +583,7 @@ ${handshakeConversionResult.hashcatFormat}`}
               title="محاولة الاتصال بالشبكة"
               status={getStatus(7)}
               Icon={KeyRound}
-              isButtonLoading={isLoading && step === 7}
+              isButtonLoading={isLoading && getStatus(7) === 'active'}
             >
               <p className="mb-4 text-sm text-muted-foreground">
                 الخطوة الأخيرة! دلوقتي هنستخدم الباسورد اللي عرفناه (
@@ -657,3 +657,5 @@ ${handshakeConversionResult.hashcatFormat}`}
     </div>
   );
 }
+
+    
