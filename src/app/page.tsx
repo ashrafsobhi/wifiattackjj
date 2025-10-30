@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 
 import {
-  runHandshakeConversionAction,
   runPasswordCrackingAction,
   sendTelegramMessageAction
 } from "@/app/actions";
@@ -228,21 +227,17 @@ export default function Home() {
     }
   };
 
-  const handleRunConversion = async () => {
+  const handleRunConversion = () => {
     setIsLoading(true);
-    try {
-      const result = await runHandshakeConversionAction("nemo-01.cap");
-      setHandshakeConversionResult(result);
-      setStep(7);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "فشل التحويل",
-        description: "فشلت عملية تحويل الهاندشيك باستخدام الذكاء الاصطناعي. حاول مرة أخرى.",
+    // Simulate the conversion process without AI
+    setTimeout(() => {
+      setHandshakeConversionResult({
+        hashcatFormat: targetHash,
+        conversionDetails: "summarizing packets in nemo-01.cap... written hash to nemo.hc22000",
       });
-    } finally {
+      setStep(7);
       setIsLoading(false);
-    }
+    }, 1000); // Simulate a short delay
   };
   
   const handleRunCracking = async () => {
@@ -266,7 +261,9 @@ export default function Home() {
   };
 
   const handleCrackingCommandSubmit = (command: string) => {
-    const expectedCommand = `hashcat -m 22000 ${handshakeConversionResult?.hashcatFormat} -a 3 ${crackingMask}`;
+    const expectedCommand = `hashcat -m 22000 ${
+                handshakeConversionResult?.hashcatFormat ?? targetHash
+              } -a 3 ${crackingMask}`;
     if (command.trim() === expectedCommand.trim()) {
       handleRunCracking();
       setCurrentCommand("");
@@ -501,7 +498,7 @@ CC:11:DD:22:EE:33  ${
               isButtonLoading={isLoading && step === 6}
             >
                <p className="mb-4 text-sm text-muted-foreground">
-                الملف اللي لقطناه (cap.) مش جاهز لبرنامج كسر الباسوردات Hashcat. لازم الأول نحوله لصيغة مخصوصة (HC22000) باستخدام أداة مساعدة. هنا هنستخدم الذكاء الاصطناعي عشان يحاكي العملية دي ويجهز لنا الهاش.
+                الملف اللي لقطناه (cap.) مش جاهز لبرنامج كسر الباسوردات Hashcat. لازم الأول نحوله لصيغة مخصوصة (HC22000) باستخدام أداة مساعدة.
               </p>
               {handshakeConversionResult ? (
                 <TerminalOutput>
