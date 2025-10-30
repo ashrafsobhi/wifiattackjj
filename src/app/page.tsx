@@ -161,6 +161,20 @@ export default function Home() {
     }
   };
 
+  const handleCrackingCommandSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const expectedCommand = `hashcat -m 22000 ${targetHash} -a 3 ${crackingMask}`;
+    if (currentCommand.trim() === expectedCommand.trim()) {
+      handleRunCracking();
+    } else {
+      toast({
+        variant: "destructive",
+        title: "أمر خاطئ",
+        description: "الأمر اللي كتبته مش مطابق للأمر المطلوب بالماسك الحالي. حاول تاني.",
+      });
+    }
+  };
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <AppHeader />
@@ -415,21 +429,7 @@ ${handshakeConversionResult.hashcatFormat}`}
                 disabled={isLoading}
               />
             </div>
-             <form onSubmit={(e) => {
-                e.preventDefault();
-                const expectedCommand = `hashcat -m 22000 ${targetHash} -a 3 ${crackingMask}`;
-                if (currentCommand.trim() === expectedCommand.trim()) {
-                  handleRunCracking();
-                } else {
-                  toast({
-                    variant: "destructive",
-                    title: "أمر خاطئ",
-                    description: "الأمر اللي كتبته مش مطابق للأمر المطلوب بالماسك الحالي. حاول تاني.",
-                  });
-                }
-              }}
-              className="flex items-center gap-2"
-              >
+             <form onSubmit={handleCrackingCommandSubmit} className="flex items-center gap-2">
                  <Input
                     name="command"
                     value={currentCommand}
@@ -437,9 +437,9 @@ ${handshakeConversionResult.hashcatFormat}`}
                     placeholder="اكتب الأمر هنا..."
                     className="font-code flex-1"
                     autoComplete="off"
-                    disabled={isLoading}
+                    disabled={isLoading || getStatus(7) !== 'active'}
                   />
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading || getStatus(7) !== 'active'}>
                   {isLoading ? "جاري الاختراق..." : "ابدأ الاختراق"}
                 </Button>
               </form>
