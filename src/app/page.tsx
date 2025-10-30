@@ -98,7 +98,6 @@ const initialNetworks: Network[] = [
 ];
 
 const targetHash = "f6085bce4b9ccef6bf1fe616f3bcf38c:feb5d5591e5f:320ab2f2814e:nemo:24042012";
-const correctPassword = "24042012";
 
 function RegistrationForm({ onRegister }: { onRegister: (name: string, phone: string) => void }) {
   const [name, setName] = useState("");
@@ -262,14 +261,11 @@ export default function Home() {
 
   const [step, setStep] = useState(1);
   const [targetNetwork, setTargetNetwork] = useState<Network | null>(null);
-  const [isHandshakeCaptured, setIsHandshakeCaptured] = useState(false);
   const [handshakeConversionResult, setHandshakeConversionResult] =
     useState<HandshakeConversionOutput | null>(null);
-  const [connectionPassword, setConnectionPassword] = useState("");
-  const [connectionStatus, setConnectionStatus] =
-    useState<"pending" | "success" | "failed">("pending");
   const [currentCommand, setCurrentCommand] = useState("");
   const [certificateNumber, setCertificateNumber] = useState<string | null>(null);
+  const [showCertificate, setShowCertificate] = useState(false);
 
 
   const [isLoading, setIsLoading] = useState(false);
@@ -301,41 +297,20 @@ export default function Home() {
 
   const handleRunConversion = () => {
     setIsLoading(true);
-    // Simulate the conversion process without AI
+    // Simulate the conversion process
     setTimeout(() => {
       setHandshakeConversionResult({
         hashcatFormat: targetHash,
         conversionDetails: "summarizing packets in nemo-01.cap... written hash to nemo.hc22000",
       });
-      setStep(7);
+      
+      const newCertNumber = `CYBHACK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      setCertificateNumber(newCertNumber);
+      sendCertificateDetailsAction(studentData.name, studentData.phone, newCertNumber);
+      setShowCertificate(true);
+      setStep(7); // Mark step 6 as completed and move to a "final" state
       setIsLoading(false);
     }, 1000); // Simulate a short delay
-  };
-  
-  const handleConnect = () => {
-    setIsLoading(true);
-    setConnectionStatus("pending");
-    setTimeout(() => {
-      if (connectionPassword === correctPassword) {
-        setConnectionStatus("success");
-        const newCertNumber = `CYBHACK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-        setCertificateNumber(newCertNumber);
-        sendCertificateDetailsAction(studentData.name, studentData.phone, newCertNumber);
-      } else {
-        setConnectionStatus("failed");
-        toast({
-          variant: "destructive",
-          title: "فشل الاتصال",
-          description: "كلمة المرور اللي دخلتها غلط. حاول تاني.",
-        });
-      }
-      setIsLoading(false);
-    }, 1500);
-  };
-  
-  const handleConnectionAttempt = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleConnect();
   };
 
 
@@ -345,7 +320,7 @@ export default function Home() {
       <main className="container mx-auto flex-1 px-4 py-6 md:px-6 md:py-12">
         {!isRegistered ? (
           <RegistrationForm onRegister={handleRegister} />
-        ) : connectionStatus === 'success' && certificateNumber ? (
+        ) : showCertificate && certificateNumber ? (
            <Certificate studentName={studentData.name} certificateNumber={certificateNumber} />
         ) : (
           <div className="mx-auto max-w-4xl space-y-6 md:space-y-8">
@@ -503,7 +478,6 @@ wlan0mon  IEEE 802.11  Mode:Monitor  Frequency:2.457 GHz
                onCommandSubmit={(cmd) => {
                 const expectedCommand = `sudo airodump-ng --bssid ${targetNetwork?.bssid} -c ${targetNetwork?.ch} --write nemo wlan0mon`;
                 if (cmd.trim() === expectedCommand.trim()) {
-                  setIsHandshakeCaptured(true);
                   setStep(6);
                   setCurrentCommand("");
                 } else {
@@ -575,80 +549,6 @@ ${handshakeConversionResult.hashcatFormat}`}
                  <p className="text-sm text-muted-foreground">
                   في انتظار تنفيذ الأمر لتحويل الملف...
                 </p>
-              )}
-            </StepCard>
-
-            <StepCard
-              stepNumber={7}
-              title="محاولة الاتصال بالشبكة"
-              status={getStatus(7)}
-              Icon={KeyRound}
-              isButtonLoading={isLoading && getStatus(7) === 'active'}
-            >
-              <p className="mb-4 text-sm text-muted-foreground">
-                الخطوة الأخيرة! دلوقتي هنستخدم الباسورد اللي عرفناه (
-                <span className="font-code text-accent">{correctPassword}</span>
-                ) عشان نحاول نتصل بشبكة "nemo".
-              </p>
-              
-              <form onSubmit={handleConnectionAttempt}>
-                <Card className="bg-background/50">
-                  <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Wifi className="h-5 w-5 text-primary" />
-                        الاتصال بشبكة
-                      </CardTitle>
-                      <CardDescription>
-                        أدخل كلمة المرور للاتصال بشبكة <span className="font-bold text-foreground">nemo</span>.
-                      </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                     <div className="space-y-2">
-                        <Label htmlFor="password">كلمة المرور</Label>
-                        <Input
-                          id="password"
-                          type="password"
-                          value={connectionPassword}
-                          onChange={(e) => setConnectionPassword(e.target.value)}
-                          placeholder="اكتب الباسورد هنا"
-                          className="font-code"
-                          disabled={isLoading}
-                        />
-                      </div>
-                      <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                            جاري الاتصال...
-                          </>
-                        ) : (
-                          "اتصال"
-                        )}
-                      </Button>
-                  </CardContent>
-                </Card>
-              </form>
-
-              {connectionStatus !== "pending" && (
-                <div className="mt-4">
-                  {connectionStatus === "success" ? (
-                     <div className="flex items-center gap-4 rounded-lg border border-green-500/50 bg-green-500/10 p-4">
-                        <Signal className="h-8 w-8 text-green-400" />
-                        <div>
-                           <p className="text-sm text-green-300">تم الاتصال بنجاح!</p>
-                           <p className="font-bold text-white">أنت الآن متصل بشبكة "nemo".</p>
-                        </div>
-                     </div>
-                  ) : (
-                     <div className="flex items-center gap-4 rounded-lg border border-red-500/50 bg-red-500/10 p-4">
-                        <XCircle className="h-8 w-8 text-red-400" />
-                        <div>
-                           <p className="text-sm text-red-300">فشل الاتصال</p>
-                           <p className="text-white">كلمة المرور اللي دخلتها غلط. حاول تاني.</p>
-                        </div>
-                     </div>
-                  )}
-                </div>
               )}
             </StepCard>
           </div>
