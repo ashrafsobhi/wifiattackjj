@@ -33,7 +33,7 @@ const statusConfig = {
     contentVisibility: "hidden",
   },
   active: {
-    Icon: Terminal,
+    Icon: Loader2,
     borderColor: "border-primary/50",
     textColor: "text-primary",
     bgColor: "bg-card",
@@ -69,6 +69,8 @@ export function StepCard({
       onCommandSubmit(inputValue);
     }
   };
+
+  const isCrackingStep = stepNumber === 7;
 
   return (
     <div className="relative">
@@ -106,7 +108,7 @@ export function StepCard({
             )}
           </div>
           <StatusIcon
-            className={cn("h-6 w-6", config.textColor, status === 'active' && "animate-spin")}
+            className={cn("h-6 w-6", config.textColor, status === 'active' && isButtonLoading && "animate-spin")}
           />
         </CardHeader>
         {status !== "pending" && (
@@ -114,7 +116,7 @@ export function StepCard({
             <div className="space-y-4">{children}</div>
             {onCommandSubmit && status === "active" && (
               <form onSubmit={handleSubmit} className="mt-6 border-t pt-4">
-                 <div className="relative">
+                <div className="relative">
                   <Terminal className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     value={inputValue}
@@ -124,7 +126,12 @@ export function StepCard({
                     autoComplete="off"
                     disabled={isButtonLoading}
                   />
-                 </div>
+                </div>
+                {isCrackingStep && (
+                  <Button type="submit" disabled={isButtonLoading} className="mt-2 w-full">
+                    {isButtonLoading ? "جاري الاختراق..." : "ابدأ الاختراق"}
+                  </Button>
+                )}
               </form>
             )}
           </CardContent>

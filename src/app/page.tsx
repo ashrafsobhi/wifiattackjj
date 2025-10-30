@@ -161,11 +161,11 @@ export default function Home() {
     }
   };
 
-  const handleCrackingCommandSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCrackingCommandSubmit = (command: string) => {
     const expectedCommand = `hashcat -m 22000 ${targetHash} -a 3 ${crackingMask}`;
-    if (currentCommand.trim() === expectedCommand.trim()) {
+    if (command.trim() === expectedCommand.trim()) {
       handleRunCracking();
+      setCurrentCommand("");
     } else {
       toast({
         variant: "destructive",
@@ -415,6 +415,8 @@ ${handshakeConversionResult.hashcatFormat}`}
             command={`hashcat -m 22000 ${targetHash} -a 3 ${crackingMask}`}
             status={getStatus(7)}
             Icon={KeyRound}
+            onCommandSubmit={handleCrackingCommandSubmit}
+            isButtonLoading={isLoading && step === 7}
           >
             <p className="mb-4 text-sm text-muted-foreground">
               دي المرحلة الأخيرة. بنستخدم Hashcat عشان نبدأ هجوم "Mask Attack" على الهاش اللي جهزناه. بنحدد له شكل الباسورد المتوقع (مثلاً 8 أرقام زي ما هو مكتوب). الذكاء الاصطناعي هيحاكي العملية دي ويقولنا إذا كان الماسك ده ممكن يلاقي الباسورد ولا لأ.
@@ -429,20 +431,7 @@ ${handshakeConversionResult.hashcatFormat}`}
                 disabled={isLoading}
               />
             </div>
-             <form onSubmit={handleCrackingCommandSubmit} className="flex items-center gap-2">
-                 <Input
-                    name="command"
-                    value={currentCommand}
-                    onChange={(e) => setCurrentCommand(e.target.value)}
-                    placeholder="اكتب الأمر هنا..."
-                    className="font-code flex-1"
-                    autoComplete="off"
-                    disabled={isLoading || getStatus(7) !== 'active'}
-                  />
-                <Button type="submit" disabled={isLoading || getStatus(7) !== 'active'}>
-                  {isLoading ? "جاري الاختراق..." : "ابدأ الاختراق"}
-                </Button>
-              </form>
+
             {crackingResult && (
               <div className="mt-4">
                 <h4 className="font-headline text-lg">نتيجة الاختراق:</h4>
